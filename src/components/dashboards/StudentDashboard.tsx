@@ -1,8 +1,8 @@
-import { useState } from 'react'
-import { Layout } from '../../components/Layout'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card'
-import { Button } from '../../components/ui/button'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs'
+import { useState, useEffect } from "react"
+import { Layout } from "../../components/Layout"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../components/ui/card"
+import { Button } from "../../components/ui/button"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/tabs"
 import {
   Target,
   TrendingUp,
@@ -11,22 +11,41 @@ import {
   Award,
   Search,
   Brain,
-  CheckCircle
-} from 'lucide-react'
-import { opportunityMatches, skillGapData } from '../../data/mockData'
-import { OpportunityRadar } from '../../components/student/OpportunityRadar'
-import { SkillGapMapper } from '../../components/student/SkillGapMapper'
-import { SoPAssistant } from '../../components/student/SoPAssistant'
-import { SmartSearchChatbot } from '../../components/SmartSearchChatbot'
+  CheckCircle,
+} from "lucide-react"
+import { skillGapData } from "../../data/mockData"
+import { OpportunityRadar } from "../../components/student/OpportunityRadar"
+import { SkillGapMapper } from "../../components/student/SkillGapMapper"
+import { SoPAssistant } from "../../components/student/SoPAssistant"
+import { SmartSearchChatbot } from "../../components/SmartSearchChatbot"
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from '../../components/ui/dialog'
+} from "../../components/ui/dialog"
+import { Badge } from "../../components/ui/badge"
+
+// ✅ Firebase imports
+import { ref, onValue } from "firebase/database"
+import { db } from "../../lib/firebase"
 
 export function StudentDashboard() {
   const [openTemplate, setOpenTemplate] = useState<string | null>(null)
+  const [opportunities, setOpportunities] = useState<any[]>([])
+
+  // ✅ Fetch opportunities from Firebase
+  useEffect(() => {
+    const oppRef = ref(db, "opportunities")
+    onValue(oppRef, (snapshot) => {
+      const data = snapshot.val()
+      if (data) {
+        setOpportunities(Object.values(data))
+      } else {
+        setOpportunities([])
+      }
+    })
+  }, [])
 
   return (
     <Layout>
@@ -104,7 +123,7 @@ export function StudentDashboard() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <OpportunityRadar opportunities={opportunityMatches} />
+                  <OpportunityRadar opportunities={opportunities} />
                 </CardContent>
               </Card>
 
@@ -177,8 +196,36 @@ export function StudentDashboard() {
             </div>
           </TabsContent>
 
+          {/* ✅ Updated Opportunities Tab */}
           <TabsContent value="opportunities">
-            <OpportunityRadar opportunities={opportunityMatches} detailed />
+            <Card>
+              <CardHeader>
+                <CardTitle>Available Opportunities</CardTitle>
+                <CardDescription>
+                  Placement & internship opportunities uploaded by T&P Cell
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {opportunities.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No opportunities yet.</p>
+                ) : (
+                  opportunities.map((opp, index) => (
+                    <div key={index} className="border rounded-lg p-4">
+                      <h4 className="font-semibold">{opp.title}</h4>
+                      <p className="text-sm text-muted-foreground">{opp.company}</p>
+                      <p className="text-sm">Deadline: {opp.deadline}</p>
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {opp.skills?.split(",").map((skill: string, i: number) => (
+                          <Badge key={i} variant="outline">
+                            {skill.trim()}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="skills">
@@ -196,24 +243,30 @@ export function StudentDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="grid gap-4 md:grid-cols-3">
-                  <Card className="cursor-pointer hover:shadow-lg transition"
-                        onClick={() => setOpenTemplate("cs")}>
+                  <Card
+                    className="cursor-pointer hover:shadow-lg transition"
+                    onClick={() => setOpenTemplate("cs")}
+                  >
                     <CardHeader>
                       <CardTitle>Computer Science Masters</CardTitle>
                       <CardDescription>Template for CS graduate programs</CardDescription>
                     </CardHeader>
                   </Card>
 
-                  <Card className="cursor-pointer hover:shadow-lg transition"
-                        onClick={() => setOpenTemplate("mba")}>
+                  <Card
+                    className="cursor-pointer hover:shadow-lg transition"
+                    onClick={() => setOpenTemplate("mba")}
+                  >
                     <CardHeader>
                       <CardTitle>MBA Application</CardTitle>
                       <CardDescription>Business school application template</CardDescription>
                     </CardHeader>
                   </Card>
 
-                  <Card className="cursor-pointer hover:shadow-lg transition"
-                        onClick={() => setOpenTemplate("phd")}>
+                  <Card
+                    className="cursor-pointer hover:shadow-lg transition"
+                    onClick={() => setOpenTemplate("phd")}
+                  >
                     <CardHeader>
                       <CardTitle>Research PhD</CardTitle>
                       <CardDescription>Research-focused doctoral programs</CardDescription>
@@ -228,7 +281,9 @@ export function StudentDashboard() {
             <Card>
               <CardHeader>
                 <CardTitle>Application Templates</CardTitle>
-                <CardDescription>Download ready-to-edit templates for common application types</CardDescription>
+                <CardDescription>
+                  Download ready-to-edit templates for common application types
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="grid gap-4 md:grid-cols-3">
@@ -239,8 +294,16 @@ export function StudentDashboard() {
                     </CardHeader>
                     <CardContent>
                       <div className="flex gap-2">
-                        <Button asChild className="flex-1"><a href="/templates/cs_masters_template.docx" download>Download .docx</a></Button>
-                        <Button asChild variant="outline" className="flex-1"><a href="/templates/cs_masters_template.pdf" target="_blank">View PDF</a></Button>
+                        <Button asChild className="flex-1">
+                          <a href="/templates/cs_masters_template.docx" download>
+                            Download .docx
+                          </a>
+                        </Button>
+                        <Button asChild variant="outline" className="flex-1">
+                          <a href="/templates/cs_masters_template.pdf" target="_blank">
+                            View PDF
+                          </a>
+                        </Button>
                       </div>
                     </CardContent>
                   </Card>
@@ -252,8 +315,16 @@ export function StudentDashboard() {
                     </CardHeader>
                     <CardContent>
                       <div className="flex gap-2">
-                        <Button asChild className="flex-1"><a href="/templates/mba_application_template.docx" download>Download .docx</a></Button>
-                        <Button asChild variant="outline" className="flex-1"><a href="/templates/mba_application_template.pdf" target="_blank">View PDF</a></Button>
+                        <Button asChild className="flex-1">
+                          <a href="/templates/mba_application_template.docx" download>
+                            Download .docx
+                          </a>
+                        </Button>
+                        <Button asChild variant="outline" className="flex-1">
+                          <a href="/templates/mba_application_template.pdf" target="_blank">
+                            View PDF
+                          </a>
+                        </Button>
                       </div>
                     </CardContent>
                   </Card>
@@ -261,12 +332,22 @@ export function StudentDashboard() {
                   <Card className="border rounded-2xl">
                     <CardHeader>
                       <CardTitle className="text-lg">PhD Research</CardTitle>
-                      <CardDescription>Research proposal structure + checklist</CardDescription>
+                      <CardDescription>
+                        Research proposal structure + checklist
+                      </CardDescription>
                     </CardHeader>
                     <CardContent>
                       <div className="flex gap-2">
-                        <Button asChild className="flex-1"><a href="/templates/phd_research_template.docx" download>Download .docx</a></Button>
-                        <Button asChild variant="outline" className="flex-1"><a href="/templates/phd_research_template.pdf" target="_blank">View PDF</a></Button>
+                        <Button asChild className="flex-1">
+                          <a href="/templates/phd_research_template.docx" download>
+                            Download .docx
+                          </a>
+                        </Button>
+                        <Button asChild variant="outline" className="flex-1">
+                          <a href="/templates/phd_research_template.pdf" target="_blank">
+                            View PDF
+                          </a>
+                        </Button>
                       </div>
                     </CardContent>
                   </Card>
@@ -290,20 +371,44 @@ export function StudentDashboard() {
             <div className="flex gap-2">
               {openTemplate === "cs" && (
                 <>
-                  <Button asChild><a href="/templates/cs_masters_template.docx" download>Download .docx</a></Button>
-                  <Button asChild variant="outline"><a href="/templates/cs_masters_template.pdf" target="_blank">View PDF</a></Button>
+                  <Button asChild>
+                    <a href="/templates/cs_masters_template.docx" download>
+                      Download .docx
+                    </a>
+                  </Button>
+                  <Button asChild variant="outline">
+                    <a href="/templates/cs_masters_template.pdf" target="_blank">
+                      View PDF
+                    </a>
+                  </Button>
                 </>
               )}
               {openTemplate === "mba" && (
                 <>
-                  <Button asChild><a href="/templates/mba_application_template.docx" download>Download .docx</a></Button>
-                  <Button asChild variant="outline"><a href="/templates/mba_application_template.pdf" target="_blank">View PDF</a></Button>
+                  <Button asChild>
+                    <a href="/templates/mba_application_template.docx" download>
+                      Download .docx
+                    </a>
+                  </Button>
+                  <Button asChild variant="outline">
+                    <a href="/templates/mba_application_template.pdf" target="_blank">
+                      View PDF
+                    </a>
+                  </Button>
                 </>
               )}
               {openTemplate === "phd" && (
                 <>
-                  <Button asChild><a href="/templates/phd_research_template.docx" download>Download .docx</a></Button>
-                  <Button asChild variant="outline"><a href="/templates/phd_research_template.pdf" target="_blank">View PDF</a></Button>
+                  <Button asChild>
+                    <a href="/templates/phd_research_template.docx" download>
+                      Download .docx
+                    </a>
+                  </Button>
+                  <Button asChild variant="outline">
+                    <a href="/templates/phd_research_template.pdf" target="_blank">
+                      View PDF
+                    </a>
+                  </Button>
                 </>
               )}
             </div>

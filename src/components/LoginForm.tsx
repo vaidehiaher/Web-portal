@@ -1,11 +1,12 @@
 import React, { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card'
 import { useAuth } from '../contexts/AuthContext'
 import { UserRole } from '../types'
 import { Loader2, GraduationCap, Users, Building } from 'lucide-react'
+import Marquee from 'react-fast-marquee'   // ✅ Marquee import
 
 const roleInfo: Record<UserRole, { label: string; icon: React.ReactNode; color: string; demo: string }> = {
   student: { 
@@ -56,7 +57,6 @@ export function LoginForm() {
       setError('Invalid credentials. Try demo accounts listed below.')
       return
     }
-    // After successful login, always land on dashboard
     navigate('/dashboard', { replace: true })
   }
 
@@ -66,19 +66,17 @@ export function LoginForm() {
   }
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center overflow-hidden">
-      {/* --- Spline Background (Dotwaves) --- */}
+    <div className="relative min-h-screen flex flex-col justify-center overflow-hidden">
+      {/* --- Background --- */}
       <iframe
         src="https://my.spline.design/dotwaves-W7wfAMp4VK9KSOqDA025PrfA/"
         frameBorder="0"
         className="fixed top-0 left-0 w-full h-full z-0"
       ></iframe>
-
-      {/* --- Dark Overlay --- */}
       <div className="fixed top-0 left-0 w-full h-full bg-black/50 z-10"></div>
 
       {/* --- Login Box --- */}
-      <div className="relative z-20 w-full max-w-md p-4">
+      <div className="relative z-20 w-full max-w-md p-4 mx-auto">
         <Card className="shadow-xl border-0 bg-white/80 dark:bg-gray-800/80 backdrop-blur">
           <CardHeader className="text-center">
             {logoOk ? (
@@ -160,6 +158,25 @@ export function LoginForm() {
             </div>
           </CardContent>
         </Card>
+      </div>
+
+      {/* --- ✅ Marquee at the bottom --- */}
+      <div className="relative z-20 mt-auto bg-blue-100 py-2">
+        <Marquee gradient={false} speed={60}>
+          <span className="text-lg font-semibold mr-6">
+            Aptitude Training Workshop –
+            <Link to="/register" className="text-blue-600 underline ml-2">
+              Register Now
+            </Link>
+          </span>
+
+          <span className="text-lg font-semibold mr-6">
+            Resume Building Seminar –
+            <Link to="/register" className="text-blue-600 underline ml-2">
+              Register Now
+            </Link>
+          </span>
+        </Marquee>
       </div>
     </div>
   )
